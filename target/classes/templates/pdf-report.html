@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Habit Tracker - Progress Report</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #ffffff;
+            color: #2c3e50;
+            font-family: sans-serif;
+            padding: 30px;
+        }
+        .report-header {
+            border-bottom: 2px solid #2ecc71;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        .logo-text {
+            color: #2ecc71;
+            font-weight: 700;
+            font-size: 1.8rem;
+        }
+        .summary-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- PDF Actions Header (Hidden in Print) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print border p-3 rounded bg-light">
+        <span class="small text-muted"><i class="bi bi-info-circle"></i> This print view is optimized for PDF conversion. Click "Print Report" to save.</span>
+        <button class="btn btn-primary btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Print Report</button>
+    </div>
+
+    <!-- Main Print Report Card -->
+    <div class="report-header d-flex justify-content-between align-items-end">
+        <div>
+            <div class="logo-text">🌿 Habit Tracker</div>
+            <div class="small text-muted mt-1">Official Personal Growth & Consistency Report</div>
+        </div>
+        <div class="text-end text-muted small">
+            <div>Report Date: <strong th:text="${generatedDate}">07 Jul 2026</strong></div>
+            <div>User ID Reference: <strong th:text="${user.id}">1</strong></div>
+        </div>
+    </div>
+
+    <!-- User Profile details -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-12">
+            <h5 class="fw-bold border-bottom pb-2">Profile Overview</h5>
+            <table class="table table-borderless table-sm small">
+                <tr>
+                    <td class="text-muted" style="width: 150px;">Member Name:</td>
+                    <td><strong th:text="${user.name}">Rishabh Lokhande</strong></td>
+                </tr>
+                <tr>
+                    <td class="text-muted">Account Email:</td>
+                    <td th:text="${user.email}">user@example.com</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">Local Timezone:</td>
+                    <td th:text="${user.timezone != null ? user.timezone : 'Asia/Kolkata'}">Asia/Kolkata</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Key Metrics Grid -->
+    <h5 class="fw-bold border-bottom pb-3 mb-3">Performance Metrics Summary</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-3">
+            <div class="summary-card">
+                <span class="text-muted small d-block">Completion Avg</span>
+                <strong class="fs-4 text-success" th:text="${report.averagePercent} + '%'">0%</strong>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="summary-card">
+                <span class="text-muted small d-block">Perfect Days</span>
+                <strong class="fs-4 text-success" th:text="${report.perfectDays}">0</strong>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="summary-card">
+                <span class="text-muted small d-block">Completed Days</span>
+                <strong class="fs-4 text-primary" th:text="${report.completedDays}">0</strong>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="summary-card">
+                <span class="text-muted small d-block">Longest Streak</span>
+                <strong class="fs-4 text-warning" th:text="${report.longestStreak} + 'd'">0d</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Habits Rankings Details -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="p-3 border rounded bg-light">
+                <span class="small text-muted d-block">Most Consistent Habit</span>
+                <strong class="text-success" th:text="${report.bestHabit}">None</strong>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="p-3 border rounded bg-light">
+                <span class="small text-muted d-block">Least Consistent Habit</span>
+                <strong class="text-danger" th:text="${report.worstHabit}">None</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Habit Tables -->
+    <h5 class="fw-bold border-bottom pb-2 mb-3">Habit Catalog Details</h5>
+    <table class="table table-bordered table-striped small align-middle">
+        <thead>
+            <tr class="table-light">
+                <th>Habit Name</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th class="text-center">Active Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="habit : ${habits}">
+                <td><strong th:text="${habit.habitName}">Habit</strong></td>
+                <td><span class="badge bg-secondary text-dark" th:text="${habit.category}">Personal</span></td>
+                <td th:text="${habit.description != null && !habit.description.isEmpty() ? habit.description : '—'}">Description</td>
+                <td class="text-center" th:text="${habit.active ? 'Active' : 'Inactive'}">Active</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="mt-5 text-center text-muted small border-top pt-4">
+        Thank you for tracking your goals. Small daily improvements over time lead to stunning results!
+    </div>
+
+</div>
+
+<script>
+    // Trigger browser native print dialogue on load automatically
+    window.onload = function() {
+        setTimeout(function() {
+            window.print();
+        }, 500);
+    };
+</script>
+</body>
+</html>

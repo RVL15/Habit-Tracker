@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker - Premium Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- CSRF Meta Tags -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8faf9;
+            color: #2c3e50;
+            min-height: 100vh;
+        }
+        .navbar-custom {
+            background-color: #ffffff;
+            border-bottom: 1px solid #eef2f0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+        }
+        .navbar-brand {
+            font-weight: 700;
+            color: #2ecc71 !important;
+            font-size: 1.4rem;
+        }
+        .card-custom {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            background: #ffffff;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+        }
+        .month-header {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .btn-green-outline {
+            color: #2ecc71;
+            border: 2px solid #2ecc71;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.2s;
+            background: transparent;
+        }
+        .btn-green-outline:hover {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .btn-green {
+            background-color: #2ecc71;
+            color: white;
+            font-weight: 600;
+            border-radius: 8px;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-green:hover {
+            background-color: #27ae60;
+            color: white;
+        }
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #eef2f0;
+        }
+        .habit-table {
+            margin-bottom: 0;
+            background-color: #ffffff;
+        }
+        .habit-table th {
+            background-color: #f4f7f5;
+            color: #7f8c8d;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-align: center;
+            border-bottom: 2px solid #eef2f0;
+            padding: 0.75rem 0.5rem;
+        }
+        .habit-table th.habit-name-col {
+            text-align: left;
+            padding-left: 1.5rem;
+            min-width: 200px;
+        }
+        .habit-table td {
+            vertical-align: middle;
+            text-align: center;
+            padding: 0.6rem 0.4rem;
+            border-bottom: 1px solid #eef2f0;
+        }
+        .habit-table td.habit-name-col {
+            text-align: left;
+            padding-left: 1.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .habit-checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #bdc3c7;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            display: inline-block;
+            outline: none;
+            position: relative;
+            background-color: #fff;
+            transition: all 0.15s ease-in-out;
+        }
+        .habit-checkbox:checked {
+            background-color: #2ecc71;
+            border-color: #2ecc71;
+        }
+        .habit-checkbox:checked::after {
+            content: "\F26B";
+            font-family: "bootstrap-icons";
+            font-weight: 900;
+            color: white;
+            font-size: 14px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .habit-checkbox:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            border-color: #dee2e6;
+        }
+        .status-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1050;
+            display: none;
+        }
+        .today-col {
+            background-color: rgba(46, 204, 113, 0.05) !important;
+            border-left: 1px dashed rgba(46, 204, 113, 0.3) !important;
+            border-right: 1px dashed rgba(46, 204, 113, 0.3) !important;
+        }
+        .live-clock-container {
+            border: 1px solid #eef2f0;
+            border-radius: 12px;
+            background-color: #ffffff;
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.4s ease-out forwards;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .chart-box {
+            position: relative;
+            height: 120px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-custom py-3 mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="#"><i class="bi bi-leaf"></i> Habit Tracker</a>
+        <div class="d-flex align-items-center gap-3">
+            <a th:href="@{/analytics}" class="btn btn-green-outline btn-sm px-3"><i class="bi bi-graph-up-arrow"></i> Analytics</a>
+            <a th:href="@{/profile}" class="btn btn-green-outline btn-sm px-3"><i class="bi bi-person-fill"></i> My Profile</a>
+            <a th:href="@{/habits}" class="btn btn-green-outline btn-sm px-3"><i class="bi bi-gear-fill"></i> Manage Habits</a>
+            <form th:action="@{/logout}" method="post" class="m-0">
+                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">Logout</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Container -->
+<div class="container pb-5 fade-in-up">
+    <div class="row">
+        
+        <!-- Left/Center Content Column -->
+        <div class="col-lg-9 col-md-12">
+            
+            <!-- Top Dashboard Stats Row -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-sm-3 col-lg-3">
+                    <div class="card card-custom p-3 text-center">
+                        <div class="text-success fs-3 mb-1"><i class="bi bi-rocket-takeoff-fill"></i></div>
+                        <h3 class="fw-bold mb-0" th:text="${analytics.todayCompletion} + '%'">0%</h3>
+                        <small class="text-muted small">Today's Progress</small>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-3 col-lg-3">
+                    <div class="card card-custom p-3 text-center">
+                        <div class="text-warning fs-3 mb-1"><i class="bi bi-fire"></i></div>
+                        <h3 class="fw-bold mb-0" th:text="${analytics.currentStreak} + ' Days'">0 Days</h3>
+                        <small class="text-muted small">Current Streak</small>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-3 col-lg-3">
+                    <div class="card card-custom p-3 text-center">
+                        <div class="text-primary fs-3 mb-1"><i class="bi bi-trophy-fill"></i></div>
+                        <h3 class="fw-bold mb-0" th:text="${analytics.longestStreak} + ' Days'">0 Days</h3>
+                        <small class="text-muted small">Longest Streak</small>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-3 col-lg-3">
+                    <div class="card card-custom p-3 text-center">
+                        <div class="text-info fs-3 mb-1"><i class="bi bi-bookmark-check-fill"></i></div>
+                        <h3 class="fw-bold mb-0" th:text="${analytics.totalHabits}">0</h3>
+                        <small class="text-muted small">Total Habits</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Charts Row -->
+            <div class="card card-custom p-4 mb-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart-fill text-success"></i> Completion Analytics</h5>
+                <div class="row g-3 text-center">
+                    <div class="col-6 col-md-3">
+                        <div class="chart-box">
+                            <canvas id="overallChart"></canvas>
+                        </div>
+                        <div class="fw-semibold mt-2 small">Overall</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="chart-box">
+                            <canvas id="todayChart"></canvas>
+                        </div>
+                        <div class="fw-semibold mt-2 small">Today</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="chart-box">
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                        <div class="fw-semibold mt-2 small">Weekly</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="chart-box">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                        <div class="fw-semibold mt-2 small">Monthly</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bars Section -->
+            <div class="card card-custom p-4 mb-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart-steps text-success"></i> Progress Tracking</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between small fw-medium text-muted mb-1">
+                            <span>Today's Progress</span>
+                            <span th:text="${analytics.todayCompletion} + '%'">0%</span>
+                        </div>
+                        <div class="progress rounded-pill" style="height: 10px;">
+                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" th:style="'width: ' + ${analytics.todayCompletion} + '%'"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between small fw-medium text-muted mb-1">
+                            <span>Weekly Progress</span>
+                            <span th:text="${analytics.weeklyCompletion} + '%'">0%</span>
+                        </div>
+                        <div class="progress rounded-pill" style="height: 10px;">
+                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" th:style="'width: ' + ${analytics.weeklyCompletion} + '%'"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <div class="d-flex justify-content-between small fw-medium text-muted mb-1">
+                            <span>Monthly Progress</span>
+                            <span th:text="${analytics.monthlyCompletion} + '%'">0%</span>
+                        </div>
+                        <div class="progress rounded-pill" style="height: 10px;">
+                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" th:style="'width: ' + ${analytics.monthlyCompletion} + '%'"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between small fw-medium text-muted mb-1">
+                            <span>Overall Progress</span>
+                            <span th:text="${analytics.overallCompletion} + '%'">0%</span>
+                        </div>
+                        <div class="progress rounded-pill" style="height: 10px;">
+                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" th:style="'width: ' + ${analytics.overallCompletion} + '%'"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly 7-Day Dashboard Cards -->
+            <div class="card card-custom p-4 mb-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-calendar-range-fill text-success"></i> Trailing Week Analysis</h5>
+                <div class="row g-2">
+                    <div th:each="day : ${analytics.weeklyStatistics}" class="col-4 col-sm-3 col-md-2 flex-grow-1">
+                        <div class="card p-2 text-center border-0 rounded-3 text-dark h-100" 
+                             th:classappend="${day.isToday} ? 'border border-2 border-success bg-success-subtle shadow-sm' : 'bg-light'">
+                            <span class="fw-bold small text-truncate d-block" th:text="${day.dayName}">Mon</span>
+                            
+                            <!-- Mini Progress Circle -->
+                            <div class="d-flex justify-content-center my-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center bg-white border border-success fw-bold text-success" 
+                                     style="width: 44px; height: 44px; font-size: 0.8rem;" th:text="${day.completionPercent} + '%'">
+                                    0%
+                                </div>
+                            </div>
+                            
+                            <div class="small text-muted" style="font-size: 0.72rem;">
+                                <span class="d-block" th:text="'Done: ' + ${day.completedCount}">Done: 0</span>
+                                <span class="d-block" th:text="'Pend: ' + ${day.pendingCount}">Pend: 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Month Header (Month Navigation inside content area) -->
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center mb-4 gap-3">
+                <div>
+                    <span class="month-header text-capitalize" th:text="${monthName} + ' ' + ${currentYear}">July 2026</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <a th:href="@{/dashboard(year=${prevYear},month=${prevMonth})}" class="btn btn-green-outline px-3 py-2">
+                        <i class="bi bi-chevron-left"></i> Previous Month
+                    </a>
+                    <a th:href="@{/dashboard}" class="btn btn-green px-4 py-2">Today</a>
+                    <a th:href="@{/dashboard(year=${nextYear},month=${nextMonth})}" class="btn btn-green-outline px-3 py-2">
+                        Next Month <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Monthly Calendar Grid Card -->
+            <div class="card card-custom p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap-fill text-success"></i> Monthly Tracker Grid</h5>
+                </div>
+
+                <div th:if="${#lists.isEmpty(habits)}" class="text-center py-5">
+                    <i class="bi bi-calendar2-check text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3 text-muted">No active habits.</h5>
+                    <p class="text-muted small">Configure habits to start tracking.</p>
+                </div>
+
+                <div th:if="${!#lists.isEmpty(habits)}" class="table-container">
+                    <table class="table habit-table table-hover">
+                        <thead>
+                            <tr>
+                                <th class="habit-name-col">My Habits</th>
+                                <th th:each="date : ${monthDates}" th:classappend="${date.equals(today)} ? 'today-col' : ''">
+                                    <div th:classappend="${date.equals(today)} ? 'text-success fw-bold' : ''">
+                                        <div class="small fw-semibold text-muted text-uppercase" th:text="${#temporals.format(date, 'EEE')}">Wed</div>
+                                        <div class="fw-bold fs-5 mt-1" th:text="${date.equals(today)} ? '[' + ${date.dayOfMonth} + ']' : ${date.dayOfMonth}">1</div>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="habit : ${habits}" class="habit-row" th:style="'border-left: 4px solid ' + ${habit.color}">
+                                <td class="habit-name-col">
+                                    <span th:text="${habit.habitName}">Wake up at 5 AM</span>
+                                    <small class="d-block text-muted fw-normal" th:text="${habit.description}">Description</small>
+                                </td>
+                                <td th:each="date : ${monthDates}" th:classappend="${date.equals(today)} ? 'today-col' : ''">
+                                    <!-- Past Date (Read-Only) -->
+                                    <th:block th:if="${date.isBefore(today)}">
+                                        <span th:if="${trackerMap.get(habit.id) != null && trackerMap.get(habit.id).contains(date)}" 
+                                              class="text-success fw-bold fs-5" title="Completed"><i class="bi bi-check-lg"></i></span>
+                                        <span th:unless="${trackerMap.get(habit.id) != null && trackerMap.get(habit.id).contains(date)}" 
+                                              class="text-muted opacity-25" title="Not completed">—</span>
+                                    </th:block>
+                                    
+                                    <!-- Today (Editable Checkbox) -->
+                                    <th:block th:if="${date.equals(today)}">
+                                        <input type="checkbox" 
+                                               class="habit-checkbox animate-checkbox" 
+                                               th:data-habit-id="${habit.id}"
+                                               th:data-date="${date}"
+                                               th:checked="${trackerMap.get(habit.id) != null && trackerMap.get(habit.id).contains(date)}"
+                                               onclick="saveProgress(this)">
+                                    </th:block>
+                                    
+                                    <!-- Future Date (Disabled Checkbox) -->
+                                    <th:block th:if="${date.isAfter(today)}">
+                                        <input type="checkbox" 
+                                               class="habit-checkbox opacity-50" 
+                                               disabled title="Future dates are locked">
+                                    </th:block>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Month Summary Statistics Grid -->
+            <div class="card card-custom p-4 mb-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-clipboard-data-fill text-success"></i> Month Statistics Summary</h5>
+                <div class="row g-3 text-center">
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="p-2 border rounded-3 bg-light">
+                            <span class="d-block text-muted small">Completed Days</span>
+                            <strong class="fs-5" th:text="${analytics.monthlyStatistics.completedDaysCount}">0</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="p-2 border rounded-3 bg-light">
+                            <span class="d-block text-muted small">Missed Days</span>
+                            <strong class="fs-5" th:text="${analytics.monthlyStatistics.missedDaysCount}">0</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="p-2 border rounded-3 bg-light">
+                            <span class="d-block text-muted small">Perfect Days</span>
+                            <strong class="fs-5" th:text="${analytics.monthlyStatistics.perfectDaysCount}">0</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="p-2 border rounded-3 bg-light">
+                            <span class="d-block text-muted small">Current Streak</span>
+                            <strong class="fs-5" th:text="${analytics.currentStreak} + 'd'">0d</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="p-2 border rounded-3 bg-light">
+                            <span class="d-block text-muted small">Longest Streak</span>
+                            <strong class="fs-5" th:text="${analytics.longestStreak} + 'd'">0d</strong>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-2">
+                        <div class="p-2 border rounded-3 bg-light">
+                            <span class="d-block text-muted small">Avg Completion</span>
+                            <strong class="fs-5" th:text="${analytics.monthlyStatistics.averageCompletion} + '%'">0%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- End Left Column -->
+
+        <!-- Right Sidebar Column -->
+        <div class="col-lg-3 col-md-12">
+            
+            <!-- Live Clock Card -->
+            <div class="card card-custom p-3 mb-3 text-center live-clock-container">
+                <div class="text-success fs-2 mb-1"><i class="bi bi-clock-fill"></i></div>
+                <div id="live-date" class="fw-semibold text-muted small mb-1">Date</div>
+                <div id="live-time" class="fw-bold fs-5 text-dark">Time</div>
+            </div>
+
+            <!-- Today's Goal Tracker Card -->
+            <div class="card card-custom p-3 mb-3">
+                <h6 class="fw-bold mb-3"><i class="bi bi-check-circle-fill text-success"></i> Today's Goal</h6>
+                <div class="mb-2 small">
+                    <span class="text-muted">Completed Habits:</span>
+                    <strong class="float-end" th:text="${analytics.completedToday}">0</strong>
+                </div>
+                <div class="mb-3 small">
+                    <span class="text-muted">Remaining Habits:</span>
+                    <strong class="float-end text-warning" th:text="${analytics.pendingToday}">0</strong>
+                </div>
+                <div class="progress rounded-pill mb-1" style="height: 8px;">
+                    <div class="progress-bar bg-success" role="progressbar" th:style="'width: ' + ${analytics.todayCompletion} + '%'"></div>
+                </div>
+                <div class="text-center mt-2 small text-muted">
+                    Total Goals: <strong th:text="${analytics.totalHabits}">0</strong>
+                </div>
+            </div>
+
+            <!-- Habit Rankings Card -->
+            <div class="card card-custom p-3 mb-3">
+                <h6 class="fw-bold mb-3"><i class="bi bi-star-fill text-warning"></i> Performance Rankings</h6>
+                <div class="mb-2 small text-truncate">
+                    <span class="text-muted d-block">Best Performing:</span>
+                    <strong class="text-success" th:text="${analytics.bestHabit}">None</strong>
+                </div>
+                <div class="small text-truncate">
+                    <span class="text-muted d-block">Worst Performing:</span>
+                    <strong class="text-danger" th:text="${analytics.worstHabit}">None</strong>
+                </div>
+            </div>
+
+            <!-- Motivational Quote Card -->
+            <div class="card card-custom p-3 mb-3 bg-success-subtle border-0">
+                <h6 class="fw-bold mb-2 text-success"><i class="bi bi-quote text-success fs-4"></i> Inspiration</h6>
+                <p class="small text-dark mb-0 font-italic" th:text="${analytics.motivationalQuote}">Motivational Quote</p>
+            </div>
+
+        </div> <!-- End Right Column -->
+
+    </div>
+</div>
+
+<!-- Status Alert toast -->
+<div class="toast align-items-center text-white bg-success border-0 status-toast shadow" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+        <div class="toast-body small">
+            <i class="bi bi-cloud-check-fill me-2"></i> Progress automatically saved!
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    function saveProgress(checkbox) {
+        const habitId = checkbox.getAttribute('data-habit-id');
+        const date = checkbox.getAttribute('data-date');
+        const completed = checkbox.checked;
+
+        const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
+        const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
+
+        const url = completed ? '/habit/check' : '/habit/uncheck';
+
+        const params = new URLSearchParams();
+        params.append('habitId', habitId);
+        params.append('date', date);
+
+        checkbox.disabled = true;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                [csrfHeader]: csrfToken
+            },
+            body: params
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'HTTP error ' + response.status);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            checkbox.disabled = false;
+            showToast();
+            // Reload page to automatically refresh progress charts and stats cards
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        })
+        .catch(error => {
+            console.error('Error auto-saving habit:', error);
+            checkbox.checked = !completed;
+            checkbox.disabled = false;
+            alert(error.message || 'Failed to save progress. Only today\'s date can be edited.');
+        });
+    }
+
+    function showToast() {
+        const toastEl = document.querySelector('.status-toast');
+        toastEl.style.display = 'block';
+        setTimeout(() => {
+            toastEl.style.display = 'none';
+        }, 1500);
+    }
+
+    // Set loaded server day in IST
+    window.loadedDay = "[[${#temporals.format(today, 'dd')}]]";
+
+    function updateClock() {
+        const now = new Date();
+        
+        // Browser timezone formatting options targeting Asia/Kolkata
+        const weekday = now.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'long' });
+        const day = now.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', day: '2-digit' });
+        const month = now.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', month: 'long' });
+        const year = now.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', year: 'numeric' });
+        
+        const dateString = `${weekday}, ${day} ${month} ${year}`;
+        
+        const timeString = now.toLocaleTimeString('en-US', {
+            timeZone: 'Asia/Kolkata',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        }) + ' IST';
+        
+        document.getElementById('live-date').innerText = dateString;
+        document.getElementById('live-time').innerText = timeString;
+        
+        // Midnight detection and dynamic refresh
+        const currentDay = now.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', day: '2-digit' });
+        if (window.loadedDay && currentDay !== window.loadedDay) {
+            window.location.reload();
+        }
+    }
+
+    // Init live clock
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Auto-scroll to today's column on load
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const todayCol = document.querySelector('.today-col');
+            if (todayCol) {
+                todayCol.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }, 300);
+    });
+
+    // ----------------------------------------------------
+    // CHART.JS CONFIGURATION (DOUGHNUT CHARTS)
+    // ----------------------------------------------------
+    const overallVal = [[${analytics.overallCompletion}]];
+    const todayVal = [[${analytics.todayCompletion}]];
+    const weeklyVal = [[${analytics.weeklyCompletion}]];
+    const monthlyVal = [[${analytics.monthlyCompletion}]];
+
+    function createDoughnutChart(canvasId, value) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [value, 100 - value],
+                    backgroundColor: ['#2ecc71', '#eef2f0'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '80%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                }
+            }
+        });
+    }
+
+    createDoughnutChart('overallChart', overallVal);
+    createDoughnutChart('todayChart', todayVal);
+    createDoughnutChart('weeklyChart', weeklyVal);
+    createDoughnutChart('monthlyChart', monthlyVal);
+</script>
+</body>
+</html>
