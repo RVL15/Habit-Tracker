@@ -27,16 +27,23 @@
 - **Monthly Summary**: Completed days, missed days, perfect days, best/worst habit, improvement rate
 
 ### 📈 Analytics & Reports Page (`/analytics`)
-- **GitHub-style 365-day contribution heatmap** (5 intensity levels)
+- **GitHub-style 365-day contribution heatmap** (5 intensity levels with dynamic **Full Mode** / **Compact Mode** weekday toggle)
 - **Smart Insights**: Auto-generated tips like *"Gym completed 92% of the time"* or *"Sunday has the lowest check-ins"*
 - **Activity Timeline**: Date-by-date habit log filtered by Week / Month / Year
 - **Goals vs Actual**: Daily, Weekly, Monthly targets with Green/Yellow/Red status bars
 
-### 👤 Profile & Settings Page (`/profile`)
-- Edit Full Name, Profile Icon, Daily Goal Target, Timezone, Theme
-- Toggle daily reminder notifications
+### 👤 Profile & Settings Page (`/profile` & `/settings`)
+- Edit Full Name, Profile Icon, Daily Goal Target, Timezone, Theme (Light & Dark Mode)
+- Toggle daily reminder notifications and save settings preferences
 - **Change Password** inline
 - **Milestone Badges**: Auto-unlock achievements — *First Habit*, *7-Day Streak*, *30-Day Streak*, *100 Completions*, *Perfect Week*, and more
+
+### 🛡 Admin Dashboard Page (`/admin`)
+- **System Stats**: Real-time stats showing Total Users, System Administrators, Total Tracked Habits, and Global Completions
+- **User CRUD Control**: Create, search, update, and delete system users with clean JPA association cascades
+- **Default Seeded Admin Account**:
+  - **Email**: `admin@example.com`
+  - **Password**: `admin123`
 
 ### 📤 Data Export
 - **Export CSV**: Download full habit completion log as a `.csv` spreadsheet
