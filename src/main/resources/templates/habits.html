@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,51 +11,100 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
+        :root {
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --primary-light: rgba(16, 185, 129, 0.1);
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        }
+        body.dark-mode {
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --primary-light: rgba(16, 185, 129, 0.15);
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --border-hover: #475569;
+        }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8faf9;
-            color: #2c3e50;
+            background-color: var(--bg);
+            color: var(--text-main);
             min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
         }
         .navbar-custom {
-            background-color: #ffffff;
-            border-bottom: 1px solid #eef2f0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            background-color: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        body.dark-mode .navbar-custom {
+            background-color: rgba(30, 41, 59, 0.8) !important;
         }
         .navbar-brand {
             font-weight: 700;
-            color: #2ecc71 !important;
+            color: var(--primary) !important;
             font-size: 1.4rem;
         }
         .card-custom {
-            border: none;
+            border: 1px solid var(--border) !important;
             border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-            background: #ffffff;
+            box-shadow: var(--shadow) !important;
+            background: var(--card-bg) !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s, background-color 0.3s;
         }
-        .btn-green {
-            background-color: #2ecc71;
-            color: white;
-            font-weight: 600;
-            border-radius: 8px;
-            border: none;
-            transition: all 0.2s;
-        }
-        .btn-green:hover {
-            background-color: #27ae60;
-            color: white;
+        .card-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md) !important;
+            border-color: var(--border-hover) !important;
         }
         .btn-green-outline {
-            color: #2ecc71;
-            border: 2px solid #2ecc71;
+            color: var(--primary);
+            border: 2px solid var(--primary);
             font-weight: 600;
-            border-radius: 8px;
-            transition: all 0.2s;
+            border-radius: 10px;
+            transition: all 0.2s ease;
             background: transparent;
+            padding: 0.5rem 1.25rem;
         }
         .btn-green-outline:hover {
-            background-color: #2ecc71;
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 4px 12px var(--primary-light);
+        }
+        body.dark-mode .btn-green-outline:hover {
+            color: #0f172a;
+        }
+        .btn-green {
+            background-color: var(--primary);
+            border-color: var(--primary);
             color: white;
+            font-weight: 600;
+            border-radius: 10px;
+            padding: 0.5rem 1.25rem;
+            transition: all 0.2s ease;
+        }
+        .btn-green:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            color: white;
+            box-shadow: 0 4px 12px var(--primary-light);
         }
         .color-preview {
             width: 16px;
@@ -65,15 +114,42 @@
             vertical-align: middle;
             border: 1px solid rgba(0,0,0,0.1);
         }
+        .table {
+            color: var(--text-main) !important;
+            background-color: transparent !important;
+        }
+        .table th, .table td {
+            border-color: var(--border) !important;
+            color: var(--text-main) !important;
+        }
+        body.dark-mode .modal-content {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border) !important;
+            color: var(--text-main) !important;
+        }
+        body.dark-mode .modal-header, body.dark-mode .modal-footer {
+            border-color: var(--border) !important;
+        }
+        body.dark-mode .modal-header .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+        body.dark-mode .bg-light {
+            background-color: var(--bg) !important;
+            border-color: var(--border) !important;
+        }
+        body.dark-mode .text-dark {
+            color: var(--text-main) !important;
+        }
     </style>
 </head>
-<body>
+<body th:classappend="${currentUserTheme == 'dark'} ? 'dark-mode' : ''">
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-custom py-3 mb-4">
     <div class="container">
         <a class="navbar-brand" href="#"><i class="bi bi-leaf"></i> Habit Tracker</a>
         <div class="d-flex align-items-center gap-3">
+            <a sec:authorize="hasAuthority('ROLE_ADMIN')" th:href="@{/admin}" class="btn btn-warning btn-sm px-3"><i class="bi bi-shield-lock-fill"></i> Admin Panel</a>
             <a th:href="@{/dashboard}" class="btn btn-green-outline btn-sm px-3"><i class="bi bi-house-door-fill"></i> Dashboard</a>
             <form th:action="@{/logout}" method="post" class="m-0">
                 <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">Logout</button>
@@ -89,6 +165,61 @@
             <p class="text-muted small mb-0">Create, edit, or toggle habit settings here.</p>
         </div>
         <a th:href="@{/habit/add}" class="btn btn-green"><i class="bi bi-plus-lg"></i> Add New Habit</a>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="card card-custom p-4 mb-4" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.25);">
+        <form th:action="@{/habits}" method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="search" class="form-label small fw-medium text-secondary">Search Habits</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control border-start-0" id="search" name="search" th:value="${selectedSearch}" placeholder="Name or description...">
+                </div>
+            </div>
+            
+            <div class="col-md-2">
+                <label for="status" class="form-label small fw-medium text-secondary">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="All" th:selected="${selectedStatus == 'All'}">All Statuses</option>
+                    <option value="Active" th:selected="${selectedStatus == 'Active'}">Active Only</option>
+                    <option value="Inactive" th:selected="${selectedStatus == 'Inactive'}">Inactive Only</option>
+                    <option value="Completed" th:selected="${selectedStatus == 'Completed'}">Completed Today</option>
+                    <option value="Pending" th:selected="${selectedStatus == 'Pending'}">Pending Today</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label for="category" class="form-label small fw-medium text-secondary">Category</label>
+                <select class="form-select" id="category" name="category">
+                    <option value="All" th:selected="${selectedCategory == 'All'}">All Categories</option>
+                    <option value="Health" th:selected="${selectedCategory == 'Health'}">Health</option>
+                    <option value="Fitness" th:selected="${selectedCategory == 'Fitness'}">Fitness</option>
+                    <option value="Study" th:selected="${selectedCategory == 'Study'}">Study</option>
+                    <option value="Finance" th:selected="${selectedCategory == 'Finance'}">Finance</option>
+                    <option value="Work" th:selected="${selectedCategory == 'Work'}">Work</option>
+                    <option value="Personal" th:selected="${selectedCategory == 'Personal'}">Personal</option>
+                    <option value="Meditation" th:selected="${selectedCategory == 'Meditation'}">Meditation</option>
+                    <option value="Reading" th:selected="${selectedCategory == 'Reading'}">Reading</option>
+                    <option value="Custom" th:selected="${selectedCategory == 'Custom'}">Custom</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label for="sort" class="form-label small fw-medium text-secondary">Sort By</label>
+                <select class="form-select" id="sort" name="sort">
+                    <option value="Alphabetical" th:selected="${selectedSort == 'Alphabetical'}">Alphabetical</option>
+                    <option value="Completion" th:selected="${selectedSort == 'Completion'}">Completion %</option>
+                    <option value="Newest" th:selected="${selectedSort == 'Newest'}">Newest Created</option>
+                    <option value="Oldest" th:selected="${selectedSort == 'Oldest'}">Oldest Created</option>
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-green flex-grow-1 py-2"><i class="bi bi-funnel-fill"></i> Apply</button>
+                <a th:href="@{/habits}" class="btn btn-outline-secondary py-2"><i class="bi bi-x-circle"></i> Clear</a>
+            </div>
+        </form>
     </div>
 
     <!-- Habits List Table -->
@@ -117,7 +248,15 @@
                             <strong th:text="${habit.habitName}">Gym Workout</strong>
                         </td>
                         <td>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill" th:text="${habit.category}">Health</span>
+                            <span th:if="${habit.category == 'Health'}" class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">Health</span>
+                            <span th:if="${habit.category == 'Fitness'}" class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-1 rounded-pill">Fitness</span>
+                            <span th:if="${habit.category == 'Study'}" class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1 rounded-pill">Study</span>
+                            <span th:if="${habit.category == 'Finance'}" class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill">Finance</span>
+                            <span th:if="${habit.category == 'Work'}" class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill">Work</span>
+                            <span th:if="${habit.category == 'Personal'}" class="badge bg-dark-subtle text-dark border border-dark-subtle px-3 py-1 rounded-pill">Personal</span>
+                            <span th:if="${habit.category == 'Meditation'}" class="badge border px-3 py-1 rounded-pill" style="background-color: rgba(0, 150, 136, 0.1) !important; color: #009688 !important; border-color: rgba(0, 150, 136, 0.2) !important;">Meditation</span>
+                            <span th:if="${habit.category == 'Reading'}" class="badge border px-3 py-1 rounded-pill" style="background-color: rgba(103, 58, 183, 0.1) !important; color: #673ab7 !important; border-color: rgba(103, 58, 183, 0.2) !important;">Reading</span>
+                            <span th:if="${habit.category != 'Health' && habit.category != 'Fitness' && habit.category != 'Study' && habit.category != 'Finance' && habit.category != 'Work' && habit.category != 'Personal' && habit.category != 'Meditation' && habit.category != 'Reading'}" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-1 rounded-pill" th:text="${habit.category}">Custom</span>
                         </td>
                         <td>
                             <span class="text-muted small" th:text="${habit.description != null && !habit.description.isEmpty() ? habit.description : 'No description'}">No description</span>

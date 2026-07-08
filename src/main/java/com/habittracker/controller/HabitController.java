@@ -80,11 +80,78 @@ public class HabitController {
     }
 
     @GetMapping("/habits")
-    public String listHabits(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+    public String listHabits(@AuthenticationPrincipal UserDetails userDetails,
+                             @RequestParam(required = false) String search,
+                             @RequestParam(required = false) String status,
+                             @RequestParam(required = false) String category,
+                             @RequestParam(required = false) String sort,
+                             Model model) {
         User user = getAuthenticatedUser(userDetails);
         List<Habit> habits = habitService.getUserHabits(user);
+
+        // Apply Search Filter (matches name or description)
+        if (search != null && !search.trim().isEmpty()) {
+            String query = search.trim().toLowerCase();
+            habits = habits.stream()
+                    .filter(h -> h.getHabitName().toLowerCase().contains(query) ||
+                                 (h.getDescription() != null && h.getDescription().toLowerCase().contains(query)))
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        // Apply Category Filter
+        if (category != null && !category.trim().isEmpty() && !"All".equalsIgnoreCase(category)) {
+            String cat = category.trim().toLowerCase();
+            habits = habits.stream()
+                    .filter(h -> h.getCategory() != null && h.getCategory().toLowerCase().equals(cat))
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        // Apply Status Filter
+        if (status != null && !status.trim().isEmpty() && !"All".equalsIgnoreCase(status)) {
+            if ("Active".equalsIgnoreCase(status)) {
+                habits = habits.stream().filter(Habit::isActive).collect(java.util.stream.Collectors.toList());
+            } else if ("Inactive".equalsIgnoreCase(status)) {
+                habits = habits.stream().filter(h -> !h.isActive()).collect(java.util.stream.Collectors.toList());
+            } else if ("Completed".equalsIgnoreCase(status)) {
+                LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
+                habits = habits.stream()
+                        .filter(h -> h.getTrackers().stream()
+                                .anyMatch(t -> t.getTrackDate().equals(today) && t.isCompleted()))
+                        .collect(java.util.stream.Collectors.toList());
+            } else if ("Pending".equalsIgnoreCase(status)) {
+                LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Kolkata"));
+                habits = habits.stream()
+                        .filter(h -> h.getTrackers().stream()
+                                .noneMatch(t -> t.getTrackDate().equals(today) && t.isCompleted()))
+                        .collect(java.util.stream.Collectors.toList());
+            }
+        }
+
+        // Apply Sorting
+        if (sort != null && !sort.trim().isEmpty()) {
+            if ("Alphabetical".equalsIgnoreCase(sort)) {
+                habits.sort(Comparator.comparing(h -> h.getHabitName().toLowerCase()));
+            } else if ("Newest".equalsIgnoreCase(sort)) {
+                habits.sort(Comparator.comparing(Habit::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+            } else if ("Oldest".equalsIgnoreCase(sort)) {
+                habits.sort(Comparator.comparing(Habit::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())));
+            } else if ("Completion".equalsIgnoreCase(sort)) {
+                habits.sort((h1, h2) -> {
+                    long c1 = h1.getTrackers().stream().filter(com.habittracker.entity.HabitTracker::isCompleted).count();
+                    long c2 = h2.getTrackers().stream().filter(com.habittracker.entity.HabitTracker::isCompleted).count();
+                    return Long.compare(c2, c1); // descending completion order
+                });
+            }
+        }
+
         model.addAttribute("username", user.getName());
         model.addAttribute("habits", habits);
+        
+        model.addAttribute("selectedSearch", search);
+        model.addAttribute("selectedStatus", status != null ? status : "All");
+        model.addAttribute("selectedCategory", category != null ? category : "All");
+        model.addAttribute("selectedSort", sort != null ? sort : "Alphabetical");
+
         return "habits";
     }
 

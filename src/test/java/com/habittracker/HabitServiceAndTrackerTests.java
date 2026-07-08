@@ -42,16 +42,32 @@ class HabitServiceAndTrackerTests {
     private HabitRepository habitRepository;
 
     @Autowired
+    private com.habittracker.repository.BadgeRepository badgeRepository;
+
+    @Autowired
     private DashboardAnalyticsService analyticsService;
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private com.habittracker.service.SettingsService settingsService;
+
+    @Autowired
+    private com.habittracker.service.ExportService exportService;
+
+    @Autowired
+    private com.habittracker.service.HeatmapService heatmapService;
+
+    @Autowired
+    private com.habittracker.service.AdminService adminService;
 
     private User testUser;
 
     @BeforeEach
     void setUp() {
         habitRepository.deleteAll();
+        badgeRepository.deleteAll();
         userRepository.deleteAll();
 
         testUser = User.builder()
@@ -173,5 +189,109 @@ class HabitServiceAndTrackerTests {
         mockMvc.perform(get("/dashboard")
                 .with(user(testUser.getEmail()).roles("USER")))
                 .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print());
+    }
+
+    @Test
+    void testSettingsServiceSaveAndLoad() {
+        var settingsDto = com.habittracker.dto.SettingsDto.builder()
+                .theme("dark")
+                .language("es")
+                .timezone("America/New_York")
+                .startDay("Sunday")
+                .weekFormat("Sun-Sat")
+                .notificationTime("09:30")
+                .notificationsEnabled(false)
+                .build();
+
+        settingsService.updateSettings(testUser, settingsDto);
+
+        var loaded = settingsService.getSettings(testUser);
+        assertEquals("dark", loaded.getTheme());
+        assertEquals("es", loaded.getLanguage());
+        assertEquals("America/New_York", loaded.getTimezone());
+        assertEquals("Sunday", loaded.getStartDay());
+        assertEquals("Sun-Sat", loaded.getWeekFormat());
+        assertEquals("09:30", loaded.getNotificationTime());
+        assertFalse(loaded.isNotificationsEnabled());
+    }
+
+    @Test
+    void testExcelExportGeneratesBytes() {
+        Habit habit = Habit.builder()
+                .habitName("Exercise")
+                .displayOrder(1)
+                .category("Fitness")
+                .build();
+        habitService.createHabit(habit, testUser);
+
+        byte[] excelBytes = exportService.exportExcel(testUser);
+        assertNotNull(excelBytes);
+        assertTrue(excelBytes.length > 0);
+    }
+
+    @Test
+    void testHeatmapGeneration() {
+        Habit habit = Habit.builder()
+                .habitName("Exercise")
+                .displayOrder(1)
+                .category("Fitness")
+                .build();
+        habitService.createHabit(habit, testUser);
+
+        var heatmap = heatmapService.getHeatmap(testUser, 2026);
+        assertNotNull(heatmap);
+        assertEquals(2026, heatmap.getYear());
+        // 2026 is not a leap year, so should have 365 days
+        assertEquals(365, heatmap.getDays().size());
+        assertEquals(12, heatmap.getMonthLabels().size());
+
+        // Assert details of Jan 1st 2026
+        var firstDay = heatmap.getDays().get(0);
+        assertEquals("2026-01-01", firstDay.getDate());
+        // Jan 1 2026 was a Thursday. Thursday % 7 + 1 = 4 % 7 + 1 = 5
+        assertEquals(5, firstDay.getRow());
+        assertEquals(1, firstDay.getCol());
+    }
+
+    @Test
+    void testAdminSecurityAccess() throws Exception {
+        // User with ROLE_USER should receive 403 Forbidden
+        mockMvc.perform(get("/admin")
+                .with(user(testUser.getEmail()).roles("USER")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isForbidden());
+
+        // User with ROLE_ADMIN should receive 200 OK
+        mockMvc.perform(get("/admin")
+                .with(user(testUser.getEmail()).authorities(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    void testAdminUserCrudAndCascade() {
+        // Create user
+        adminService.createUser("Test Admin CRUD", "admincrud@example.com", "pass123", "ROLE_USER");
+        User created = userRepository.findByEmail("admincrud@example.com").orElseThrow();
+        assertEquals("Test Admin CRUD", created.getName());
+        assertEquals("ROLE_USER", created.getRole());
+
+        // Update user
+        adminService.updateUser(created.getId(), "Updated Admin CRUD", "admincrud@example.com", "ROLE_ADMIN", "newpass123");
+        User updated = userRepository.findById(created.getId()).orElseThrow();
+        assertEquals("Updated Admin CRUD", updated.getName());
+        assertEquals("ROLE_ADMIN", updated.getRole());
+
+        // Create a habit and tracker log for updated user to test cascade delete
+        Habit habit = Habit.builder()
+                .habitName("Temp Habit")
+                .displayOrder(1)
+                .build();
+        habitService.createHabit(habit, updated);
+        assertFalse(habitRepository.findByUserOrderByDisplayOrderAscIdAsc(updated).isEmpty());
+
+        // Delete user
+        adminService.deleteUser(updated.getId());
+        assertTrue(userRepository.findByEmail("admincrud@example.com").isEmpty());
+        // Verify cascade delete on habits
+        assertTrue(habitRepository.findByUserOrderByDisplayOrderAscIdAsc(updated).isEmpty());
     }
 }

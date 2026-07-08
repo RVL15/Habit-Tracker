@@ -67,6 +67,33 @@ public class ProfileController {
         return "redirect:/profile";
     }
 
+    @PostMapping("/profile/upload")
+    public String uploadProfilePicture(@AuthenticationPrincipal UserDetails userDetails,
+                                       @org.springframework.web.bind.annotation.RequestParam("profileImage") org.springframework.web.multipart.MultipartFile file,
+                                       RedirectAttributes redirectAttributes) {
+        User user = userService.findByEmail(userDetails.getUsername()).orElseThrow();
+        try {
+            profileService.uploadProfilePicture(user, file);
+            redirectAttributes.addFlashAttribute("successMessage", "Profile picture uploaded successfully!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Upload failed: " + e.getMessage());
+        }
+        return "redirect:/profile";
+    }
+
+    @PostMapping("/profile/delete-picture")
+    public String deleteProfilePicture(@AuthenticationPrincipal UserDetails userDetails,
+                                       RedirectAttributes redirectAttributes) {
+        User user = userService.findByEmail(userDetails.getUsername()).orElseThrow();
+        try {
+            profileService.deleteProfilePicture(user);
+            redirectAttributes.addFlashAttribute("successMessage", "Profile picture reset to default icon!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Deletion failed: " + e.getMessage());
+        }
+        return "redirect:/profile";
+    }
+
     private int calculateLevel(int totalHabits, int completionPercent) {
         // Simple levels formulas: level 1 is base, level incremented for every 10 completions
         return 1 + (totalHabits * completionPercent) / 100;

@@ -12,5 +12,7 @@ public class SettingsDto {
     private String language;
     private String timezone;
     private String startDay;
-    private String timeFormat;
+    private String weekFormat;
+    private String notificationTime;
+    private boolean notificationsEnabled;
 }

@@ -65,6 +65,7 @@ public class HabitService {
         existing.setHabitName(trimmedName);
         existing.setDescription(updatedHabit.getDescription());
         existing.setColor(updatedHabit.getColor());
+        existing.setCategory(updatedHabit.getCategory());
         existing.setDisplayOrder(updatedHabit.getDisplayOrder());
         return habitRepository.save(existing);
     }

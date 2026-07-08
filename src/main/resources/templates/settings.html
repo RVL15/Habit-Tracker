@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Habit Tracker</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --primary-light: rgba(16, 185, 129, 0.1);
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        }
+        body.dark-mode {
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --primary-light: rgba(16, 185, 129, 0.15);
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --border-hover: #475569;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .navbar-custom {
+            background-color: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        body.dark-mode .navbar-custom {
+            background-color: rgba(30, 41, 59, 0.8) !important;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary) !important;
+            font-size: 1.4rem;
+        }
+        .card-custom {
+            border: 1px solid var(--border) !important;
+            border-radius: 16px;
+            box-shadow: var(--shadow) !important;
+            background: var(--card-bg) !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s, background-color 0.3s;
+        }
+        .card-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md) !important;
+            border-color: var(--border-hover) !important;
+        }
+        .btn-green-outline {
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            background: transparent;
+            padding: 0.5rem 1.25rem;
+        }
+        .btn-green-outline:hover {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 4px 12px var(--primary-light);
+        }
+        body.dark-mode .btn-green-outline:hover {
+            color: #0f172a;
+        }
+        .btn-green {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            border-radius: 10px;
+            padding: 0.5rem 1.25rem;
+            transition: all 0.2s ease;
+        }
+        .btn-green:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            color: white;
+            box-shadow: 0 4px 12px var(--primary-light);
+        }
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+        }
+        body.dark-mode .glassmorphism {
+            background: rgba(30, 41, 59, 0.7) !important;
+            border: 1px solid var(--border) !important;
+        }
+        body.dark-mode .text-muted, body.dark-mode .text-secondary {
+            color: var(--text-muted) !important;
+        }
+        body.dark-mode .form-control, body.dark-mode .form-select {
+            background-color: #0f172a !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        body.dark-mode .form-control:focus, body.dark-mode .form-select:focus {
+            border-color: #22c55e !important;
+            box-shadow: 0 0 0 0.25rem rgba(34, 197, 94, 0.25) !important;
+        }
+        body.dark-mode .bg-light {
+            background-color: var(--bg) !important;
+            border-color: var(--border) !important;
+        }
+        body.dark-mode .text-dark {
+            color: var(--text-main) !important;
+        }
+    </style>
+</head>
+<body th:classappend="${currentUserTheme == 'dark'} ? 'dark-mode' : ''">
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-custom py-3 mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="#"><i class="bi bi-leaf"></i> Habit Tracker</a>
+        <div class="d-flex align-items-center gap-3">
+            <a sec:authorize="hasAuthority('ROLE_ADMIN')" th:href="@{/admin}" class="btn btn-warning btn-sm px-3"><i class="bi bi-shield-lock-fill"></i> Admin Panel</a>
+            <a th:href="@{/dashboard}" class="btn btn-green-outline btn-sm px-3"><i class="bi bi-house-door-fill"></i> Dashboard</a>
+            <a th:href="@{/analytics}" class="btn btn-green-outline btn-sm px-3"><i class="bi bi-graph-up-arrow"></i> Analytics</a>
+            <a th:href="@{/profile}" class="btn btn-green-outline btn-sm px-3"><i class="bi bi-person-fill"></i> Profile</a>
+            <form th:action="@{/logout}" method="post" class="m-0">
+                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">Logout</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<div class="container pb-5">
+    
+    <!-- Success & Error Messages -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show rounded-3 mb-4" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${successMessage}">Success!</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> <span th:text="${errorMessage}">Error!</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card card-custom p-4 glassmorphism">
+                <h4 class="fw-bold mb-4"><i class="bi bi-gear-fill text-success"></i> Application Settings</h4>
+                <p class="text-muted small">Configure theme, scheduling, format preferences, and system preferences.</p>
+                <hr class="my-4 opacity-25">
+
+                <form th:action="@{/settings/update}" th:object="${settings}" method="post">
+                    <div class="row g-4">
+                        <!-- Theme selection -->
+                        <div class="col-md-6">
+                            <label for="theme" class="form-label small fw-medium">Theme Mode</label>
+                            <select class="form-select" id="theme" th:field="*{theme}">
+                                <option value="light">Light Theme</option>
+                                <option value="dark">Dark Theme</option>
+                                <option value="system">System Default</option>
+                            </select>
+                        </div>
+
+                        <!-- Language selector -->
+                        <div class="col-md-6">
+                            <label for="language" class="form-label small fw-medium">Language Preference</label>
+                            <select class="form-select" id="language" th:field="*{language}">
+                                <option value="en">English (US)</option>
+                                <option value="es">Español</option>
+                                <option value="fr">Français</option>
+                                <option value="hi">हिन्दी (Hindi)</option>
+                            </select>
+                        </div>
+
+                        <!-- Timezone selection -->
+                        <div class="col-md-6">
+                            <label for="timezone" class="form-label small fw-medium">Local Timezone</label>
+                            <select class="form-select" id="timezone" th:field="*{timezone}">
+                                <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                                <option value="UTC">UTC (Coordinated Universal Time)</option>
+                                <option value="America/New_York">America/New_York (EST/EDT)</option>
+                                <option value="Europe/London">Europe/London (GMT/BST)</option>
+                            </select>
+                        </div>
+
+                        <!-- Notification Time -->
+                        <div class="col-md-6">
+                            <label for="notificationTime" class="form-label small fw-medium">Preferred Daily Reminder Time</label>
+                            <input type="time" class="form-control" id="notificationTime" th:field="*{notificationTime}" required>
+                        </div>
+
+                        <!-- Start day of week -->
+                        <div class="col-md-6">
+                            <label for="startDay" class="form-label small fw-medium">First Day of Week</label>
+                            <select class="form-select" id="startDay" th:field="*{startDay}">
+                                <option value="Monday">Monday</option>
+                                <option value="Sunday">Sunday</option>
+                                <option value="Saturday">Saturday</option>
+                            </select>
+                        </div>
+
+                        <!-- Week format -->
+                        <div class="col-md-6">
+                            <label for="weekFormat" class="form-label small fw-medium">Week Format</label>
+                            <select class="form-select" id="weekFormat" th:field="*{weekFormat}">
+                                <option value="Mon-Sun">Mon-Sun (Standard)</option>
+                                <option value="Sun-Sat">Sun-Sat (Traditional)</option>
+                            </select>
+                        </div>
+
+                        <!-- Notification preference checkbox -->
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="notificationsEnabled" th:field="*{notificationsEnabled}">
+                                <label class="form-check-label small fw-medium text-muted" for="notificationsEnabled">
+                                    Enable system notifications & automated email reminders
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-5">
+                        <button type="submit" class="btn btn-green px-4 py-2">Save Settings</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -56,4 +56,15 @@ public class ExportController {
 
         return "pdf-report";
     }
+
+    @GetMapping("/exports/excel")
+    public ResponseEntity<byte[]> downloadExcel(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.findByEmail(userDetails.getUsername()).orElseThrow();
+        byte[] bytes = exportService.exportExcel(user);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=habit_history.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
+    }
 }

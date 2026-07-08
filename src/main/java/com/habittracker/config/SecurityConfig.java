@@ -31,8 +31,13 @@ public class SecurityConfig {
                     new AntPathRequestMatcher("/login"),
                     new AntPathRequestMatcher("/css/**"),
                     new AntPathRequestMatcher("/js/**"),
-                    new AntPathRequestMatcher("/images/**")
+                    new AntPathRequestMatcher("/images/**"),
+                    new AntPathRequestMatcher("/uploads/**")
                 ).permitAll()
+                .requestMatchers(
+                    new AntPathRequestMatcher("/admin"),
+                    new AntPathRequestMatcher("/admin/**")
+                ).hasAuthority("ROLE_ADMIN")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
